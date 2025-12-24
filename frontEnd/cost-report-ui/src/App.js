@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import './App.css';
+import ReportDownloadButton from './components/ReportDownloadButton';
 
 function App() {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [jsonInput, setJsonInput] = useState(JSON.stringify({
-    title: "Custom Report",
-    generatedAt: "2024-03-24",
-    account: "Client Account A",
-    timeRange: "Q1 2024",
-    summary: "Quarterly review of infrastructure costs.",
-    totalCost: 1250.00,
+    title: "Friend's Project Report",
+    generatedAt: "2024-04-01",
+    account: "External Client",
+    timeRange: "Q2 2024",
+    summary: "This report came from a totally different dynamic data source!",
+    totalCost: 9999.99,
     services: [
-      { name: "EC2", cost: 800.0, recommendation: "Purchase Savings Plans for steady workloads" },
-      { name: "S3", cost: 150.0, recommendation: "Enable Intelligent Tiering" },
-      { name: "RDS", cost: 300.0, recommendation: "Stop idle development instances" }
+      { name: "Lambda", cost: 200.0, recommendation: "Optimize memory" },
+      { name: "DynamoDB", cost: 150.0, recommendation: "Use On-Demand" }
     ]
   }, null, 2));
 
-  // --- Helpers ---
+  const API_BASE_URL = "http://127.0.0.1:8000";
+
+  // Helper for Markdown Upload (since it requires FormData, it's slightly different than JSON)
   const downloadBlob = (blob, filename) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -27,39 +29,6 @@ function App() {
     document.body.appendChild(a);
     a.click();
     a.remove();
-  };
-
-  // --- Handlers ---
-  const handleDownload = async (endpoint, filename) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`http://127.0.0.1:8000${endpoint}`);
-      if (!response.ok) throw new Error('Download failed');
-      const blob = await response.blob();
-      downloadBlob(blob, filename);
-    } catch (error) {
-      alert('Error: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCustomDownload = async (type) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/report/custom/${type}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonInput
-      });
-      if (!response.ok) throw new Error('Generation failed');
-      const blob = await response.blob();
-      downloadBlob(blob, `custom-report.${type}`);
-    } catch (error) {
-      alert('Error: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleMarkdownConvert = async (type) => {
@@ -72,7 +41,7 @@ function App() {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/convert/${type}`, {
+      const response = await fetch(`${API_BASE_URL}/convert/${type}`, {
         method: 'POST',
         body: formData,
       });
@@ -91,39 +60,52 @@ function App() {
       <header className="App-header">
         <h1>Detailed Report Generation</h1>
 
-        {/* 1. Standard Report */}
+        {/* 1. Reuse Example: Standard Report */}
         <div className="section">
           <h2>Standard Report</h2>
-          <p>Generate report from live system data (Dummy).</p>
+          <p>Reuse Pattern: GET request to existing endpoint.</p>
           <div className="button-group">
-            <button onClick={() => handleDownload('/export/pdf', 'report.pdf')} disabled={loading}>
-              Download PDF
-            </button>
-            <button onClick={() => handleDownload('/export/docx', 'report.docx')} disabled={loading}>
-              Download DOCX
-            </button>
+            <ReportDownloadButton
+              baseUrl={API_BASE_URL}
+              endpoint="/export/pdf"
+              format="pdf"
+              label="Download Standard PDF"
+            />
+            <ReportDownloadButton
+              baseUrl={API_BASE_URL}
+              endpoint="/export/docx"
+              format="docx"
+              label="Download Standard DOCX"
+            />
           </div>
         </div>
 
-        {/* 2. Custom JSON Report */}
+        {/* 2. Reuse Example: Custom Data */}
         <div className="section">
-          <h2>Custom JSON Report</h2>
+          <h2>Dynamic Data Report</h2>
+          <p>Reuse Pattern: POST request with dynamic JSON.</p>
           <textarea
             rows="8"
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
           />
           <div className="button-group">
-            <button onClick={() => handleCustomDownload('pdf')} disabled={loading}>
-              Generate PDF
-            </button>
-            <button onClick={() => handleCustomDownload('docx')} disabled={loading}>
-              Generate DOCX
-            </button>
+            <ReportDownloadButton
+              baseUrl={API_BASE_URL}
+              reportData={JSON.parse(jsonInput)} // Passing the object directly!
+              format="pdf"
+              label="Generate Dynamic PDF"
+            />
+            <ReportDownloadButton
+              baseUrl={API_BASE_URL}
+              reportData={JSON.parse(jsonInput)}
+              format="docx"
+              label="Generate Dynamic DOCX"
+            />
           </div>
         </div>
 
-        {/* 3. Markdown Conversion */}
+        {/* 3. Markdown Conversion (Special Case: File Upload) */}
         <div className="section">
           <h2>Markdown Conversion</h2>
           <p>Upload a .md file to convert it.</p>
