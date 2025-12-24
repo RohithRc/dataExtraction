@@ -1,0 +1,11 @@
+# Backend
+cost-report-backend/venv/
+cost-report-backend/__pycache__/
+cost-report-backend/*.pyc
+cost-report-backend/*.pdf
+cost-report-backend/*.docx
+
+# Frontend
+frontEnd/cost-report-ui/node_modules/
+frontEnd/cost-report-ui/build/
+.DS_Store
